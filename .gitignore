@@ -45,3 +45,5 @@ terraform.rc
 .venv
 *__pycache__*
 
+#
+.envrc
