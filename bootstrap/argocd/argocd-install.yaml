@@ -1,0 +1,81 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://argoproj.github.io/argo-helm
+    chart: argo-cd
+    targetRevision: 5.51.6
+    helm:
+      values: |
+        global:
+          domain: argocd.your-domain.com
+        
+        configs:
+          params:
+            server.insecure: true
+            application.instanceLabelKey: argocd.argoproj.io/instance
+          
+        server:
+          service:
+            type: ClusterIP
+          ingress:
+            enabled: true
+            ingressClassName: nginx
+            hosts:
+              - argocd.your-domain.com
+            tls:
+              - secretName: argocd-server-tls
+                hosts:
+                  - argocd.your-domain.com
+          
+        dex:
+          enabled: false
+          
+        notifications:
+          enabled: true
+          
+        applicationSet:
+          enabled: true
+          
+        redis-ha:
+          enabled: true
+          
+        controller:
+          replicas: 1
+          
+        repoServer:
+          replicas: 2
+          
+        server:
+          replicas: 2
+          autoscaling:
+            enabled: true
+            minReplicas: 2
+            maxReplicas: 5
+            targetCPUUtilizationPercentage: 50
+            targetMemoryUtilizationPercentage: 50
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

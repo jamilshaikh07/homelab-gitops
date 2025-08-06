@@ -1,0 +1,16 @@
+apiVersion: platform.example.com/v1alpha1
+kind: IngressStack
+metadata:
+  name: main-ingress-stack
+  namespace: default
+spec:
+  parameters:
+    namespace: "ingress-system"
+    nginx:
+      enabled: true
+      loadBalancerIP: "10.20.0.81"  # First IP in your range
+    traefik:
+      enabled: false
+    metallb:
+      enabled: true
+      ipPool: "10.20.0.81-10.20.0.99"  # Your IP range

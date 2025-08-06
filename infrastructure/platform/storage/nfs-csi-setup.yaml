@@ -1,0 +1,46 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: nfs-csi-driver
+  namespace: default
+spec:
+  rollbackLimit: 3
+  forProvider:
+    namespace: kube-system
+    chart:
+      name: csi-driver-nfs
+      repository: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+      version: "v4.5.0"
+    values:
+      image:
+        nfs:
+          repository: registry.k8s.io/sig-storage/nfsplugin
+          tag: v4.5.0
+        csiProvisioner:
+          repository: registry.k8s.io/sig-storage/csi-provisioner
+          tag: v3.6.2
+        csiSnapshotter:
+          repository: registry.k8s.io/sig-storage/csi-snapshotter
+          tag: v6.3.2
+        nodeDriverRegistrar:
+          repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
+          tag: v2.9.2
+        livenessProbe:
+          repository: registry.k8s.io/sig-storage/livenessprobe
+          tag: v2.11.0
+      kubeletDir: /var/lib/kubelet
+      controller:
+        replicas: 2
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-csi
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 10.20.0.10  # Your NAS server IP
+  share: /volume1/kubernetes  # Replace with your NFS share path
+mountOptions:
+  - hard
+  - nfsvers=4.1
+volumeBindingMode: Immediate

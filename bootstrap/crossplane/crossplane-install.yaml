@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: crossplane
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.crossplane.io/stable
+    chart: crossplane
+    targetRevision: 1.14.5
+    helm:
+      values: |
+        deploymentStrategy: RollingUpdate
+        
+        replicas: 1
+        
+        image:
+          repository: crossplane/crossplane
+          tag: v1.14.5
+          pullPolicy: IfNotPresent
+        
+        nodeSelector: {}
+        tolerations: []
+        affinity: {}
+        
+        leaderElection: true
+        args: []
+        
+        provider:
+          packages: []
+        
+        configuration:
+          packages: []
+        
+        function:
+          packages: []
+        
+        metrics:
+          enabled: false
+        
+        resourcesCrossplane:
+          limits:
+            cpu: 500m
+            memory: 1024Mi
+          requests:
+            cpu: 100m
+            memory: 512Mi
+        
+        resourcesRBACManager:
+          limits:
+            cpu: 100m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 3
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

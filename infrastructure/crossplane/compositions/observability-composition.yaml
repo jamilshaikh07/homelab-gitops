@@ -1,0 +1,151 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: observability-stack
+  labels:
+    provider: helm
+    service: observability
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: XObservabilityStack
+  
+  resources:
+  - name: monitoring-namespace
+    base:
+      apiVersion: kubernetes.crossplane.io/v1alpha1
+      kind: Object
+      spec:
+        forProvider:
+          manifest:
+            apiVersion: v1
+            kind: Namespace
+            metadata:
+              name: monitoring
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.namespace
+      toFieldPath: spec.forProvider.manifest.metadata.name
+
+  - name: prometheus-stack
+    base:
+      apiVersion: helm.crossplane.io/v1beta1
+      kind: Release
+      spec:
+        rollbackLimit: 3
+        forProvider:
+          namespace: monitoring
+          chart:
+            name: kube-prometheus-stack
+            repository: https://prometheus-community.github.io/helm-charts
+            version: "55.5.0"
+          values:
+            prometheus:
+              prometheusSpec:
+                storageSpec:
+                  volumeClaimTemplate:
+                    spec:
+                      storageClassName: nfs-csi
+                      accessModes: ["ReadWriteOnce"]
+                      resources:
+                        requests:
+                          storage: 50Gi
+                retention: 30d
+                retentionSize: 45GB
+            grafana:
+              enabled: true
+              adminPassword: admin
+              persistence:
+                enabled: true
+                storageClassName: nfs-csi
+                size: 10Gi
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                hosts:
+                  - grafana.local
+            alertmanager:
+              alertmanagerSpec:
+                storage:
+                  volumeClaimTemplate:
+                    spec:
+                      storageClassName: nfs-csi
+                      accessModes: ["ReadWriteOnce"]
+                      resources:
+                        requests:
+                          storage: 10Gi
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.namespace
+      toFieldPath: spec.forProvider.namespace
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.prometheusStack.storageClass
+      toFieldPath: spec.forProvider.values.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.storageClassName
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.prometheusStack.storageSize
+      toFieldPath: spec.forProvider.values.prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.prometheusStack.retention
+      toFieldPath: spec.forProvider.values.prometheus.prometheusSpec.retention
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.grafana.adminPassword
+      toFieldPath: spec.forProvider.values.grafana.adminPassword
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.grafana.domain
+      toFieldPath: spec.forProvider.values.grafana.ingress.hosts[0]
+
+  - name: loki-stack
+    base:
+      apiVersion: helm.crossplane.io/v1beta1
+      kind: Release
+      spec:
+        rollbackLimit: 3
+        forProvider:
+          namespace: monitoring
+          chart:
+            name: loki-stack
+            repository: https://grafana.github.io/helm-charts
+            version: "2.9.11"
+          values:
+            loki:
+              enabled: true
+              persistence:
+                enabled: true
+                storageClassName: nfs-csi
+                size: 100Gi
+              config:
+                schema_config:
+                  configs:
+                    - from: 2020-10-24
+                      store: boltdb-shipper
+                      object_store: filesystem
+                      schema: v11
+                      index:
+                        prefix: index_
+                        period: 24h
+                storage_config:
+                  boltdb_shipper:
+                    active_index_directory: /data/loki/boltdb-shipper-active
+                    cache_location: /data/loki/boltdb-shipper-cache
+                    cache_ttl: 24h
+                    shared_store: filesystem
+                  filesystem:
+                    directory: /data/loki/chunks
+            promtail:
+              enabled: true
+              config:
+                serverPort: 3101
+                clients:
+                  - url: http://loki:3100/loki/api/v1/push
+    patches:
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.namespace
+      toFieldPath: spec.forProvider.namespace
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.loki.storageClass
+      toFieldPath: spec.forProvider.values.loki.persistence.storageClassName
+    - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.loki.storageSize
+      toFieldPath: spec.forProvider.values.loki.persistence.size
+
+  writeConnectionSecretsToNamespace: crossplane-system

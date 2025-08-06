@@ -1,0 +1,101 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: velero
+  namespace: default
+spec:
+  rollbackLimit: 3
+  forProvider:
+    namespace: velero
+    chart:
+      name: velero
+      repository: https://vmware-tanzu.github.io/helm-charts
+      version: "5.1.4"
+    values:
+      image:
+        repository: velero/velero
+        tag: v1.12.1
+      
+      configuration:
+        backupStorageLocation:
+        - name: default
+          provider: aws
+          bucket: your-backup-bucket  # Replace with your S3 bucket
+          config:
+            region: us-east-1  # Replace with your region
+            s3ForcePathStyle: "false"
+            s3Url: https://s3.amazonaws.com  # Or your S3-compatible endpoint
+        
+        volumeSnapshotLocation:
+        - name: default
+          provider: aws
+          config:
+            region: us-east-1  # Replace with your region
+      
+      credentials:
+        useSecret: true
+        existingSecret: velero-credentials
+      
+      schedules:
+        daily-backup:
+          disabled: false
+          schedule: "0 1 * * *"  # Daily at 1 AM
+          template:
+            ttl: "720h"  # 30 days
+            includedNamespaces:
+            - "*"
+            excludedNamespaces:
+            - kube-system
+            - kube-public
+            - kube-node-lease
+        
+        weekly-backup:
+          disabled: false
+          schedule: "0 2 * * 0"  # Weekly on Sunday at 2 AM
+          template:
+            ttl: "2160h"  # 90 days
+            includedNamespaces:
+            - "*"
+            excludedNamespaces:
+            - kube-system
+            - kube-public
+            - kube-node-lease
+      
+      metrics:
+        enabled: true
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+      
+      kubectl:
+        image:
+          repository: bitnami/kubectl
+          tag: 1.28.4
+      
+      initContainers:
+      - name: velero-plugin-for-aws
+        image: velero/velero-plugin-for-aws:v1.8.2
+        imagePullPolicy: IfNotPresent
+        volumeMounts:
+        - mountPath: /target
+          name: plugins
+      
+      resources:
+        requests:
+          cpu: 500m
+          memory: 128Mi
+        limits:
+          cpu: 1000m
+          memory: 512Mi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: velero-credentials
+  namespace: velero
+type: Opaque
+stringData:
+  cloud: |
+    [default]
+    aws_access_key_id=YOUR_ACCESS_KEY_ID
+    aws_secret_access_key=YOUR_SECRET_ACCESS_KEY
