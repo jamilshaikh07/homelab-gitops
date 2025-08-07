@@ -1,0 +1,78 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xargoapplications.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: XArgoApplication
+    plural: xargoapplications
+  claimNames:
+    kind: ArgoApplication
+    plural: argoapplications
+  versions:
+  - name: v1alpha1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              parameters:
+                type: object
+                properties:
+                  appName:
+                    type: string
+                    description: "Name of the ArgoCD application"
+                  repoURL:
+                    type: string
+                    description: "Git repository URL"
+                  path:
+                    type: string
+                    description: "Path in the repository"
+                  targetRevision:
+                    type: string
+                    description: "Git revision to deploy"
+                    default: "HEAD"
+                  namespace:
+                    type: string
+                    description: "Target namespace for deployment"
+                    default: "default"
+                  project:
+                    type: string
+                    description: "ArgoCD project"
+                    default: "default"
+                  syncPolicy:
+                    type: object
+                    properties:
+                      automated:
+                        type: boolean
+                        description: "Enable automated sync"
+                        default: true
+                      prune:
+                        type: boolean
+                        description: "Enable pruning"
+                        default: true
+                      selfHeal:
+                        type: boolean
+                        description: "Enable self healing"
+                        default: true
+                    default:
+                      automated: true
+                      prune: true
+                      selfHeal: true
+                required:
+                - appName
+                - repoURL
+                - path
+            required:
+            - parameters
+          status:
+            type: object
+            properties:
+              applicationStatus:
+                type: string
+                description: "Status of the ArgoCD application"
