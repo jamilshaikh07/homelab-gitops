@@ -41,7 +41,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_USERNAME/YOUR_REPO.git  # Replace with your Git repo
+    repoURL: https://github.com/jamilshaikh07/homelab-gitops.git
     targetRevision: HEAD
     path: infrastructure/platform
     directory:
