@@ -1,259 +1,349 @@
-# Modern GitOps Platform with Crossplane and ArgoCD
+# 🏠 Homelab GitOps Platform with Crossplane & ArgoCD
 
-A comprehensive GitOps platform setup using Crossplane for infrastructure management and ArgoCD for GitOps automation.
+A production-ready GitOps platform for homelab environments using **Crossplane** for infrastructure management and **ArgoCD** for continuous deployment. This setup provides declarative infrastructure management with the power of GitOps workflows.
 
-## 🎯 Objectives
-
-- **Crossplane** to manage all infrastructure, platform, and Helm-based workloads
-- **ArgoCD** as the GitOps engine to sync all manifests from Git to the cluster
-- Complete declarative infrastructure with version control
-- Automated deployment and management of platform services
-- Comprehensive backup and disaster recovery strategy
-
-## 🏗️ Architecture
+## 🎯 Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Git Repository                        │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
-│  │  Bootstrap  │ │ Crossplane  │ │      Applications       │ │
-│  │   (ArgoCD)  │ │   (XRDs,    │ │    (Claims, Helm        │ │
-│  │             │ │Compositions)│ │     Releases)           │ │
-│  └─────────────┘ └─────────────┘ └─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                   ArgoCD (GitOps Engine)                    │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
-│  │   App of    │ │  Platform   │ │      Application        │ │
-│  │    Apps     │ │   Services  │ │        Apps             │ │
-│  └─────────────┘ └─────────────┘ └─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 Kubernetes Cluster                          │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────────────────┐ │
-│  │ Crossplane  │ │   Platform  │ │      Applications       │ │
-│  │ Providers   │ │  Components │ │   (via Crossplane)      │ │
-│  │   & XRDs    │ │(Ingress,etc)│ │                         │ │
-│  └─────────────┘ └─────────────┘ └─────────────────────────┘ │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                          Git Repository (Source of Truth)           │
+│  ┌──────────────┐ ┌─────────────────┐ ┌─────────────────────────────┐ │
+│  │   Bootstrap  │ │   Infrastructure │ │        Applications         │ │
+│  │  (Initial    │ │   (Crossplane    │ │     (Workloads via          │ │
+│  │   Setup)     │ │   Compositions)  │ │      Crossplane)            │ │
+│  └──────────────┘ └─────────────────┘ └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+                                     │ Git Sync
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    ArgoCD (GitOps Engine)                           │
+│  ┌──────────────┐ ┌─────────────────┐ ┌─────────────────────────────┐ │
+│  │  App-of-Apps │ │ Infrastructure  │ │     Application Apps        │ │
+│  │  (Orchestrates│ │    Services     │ │   (Workload Management)     │ │
+│  │   all apps)  │ │ (Platform Infra)│ │                             │ │
+│  └──────────────┘ └─────────────────┘ └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+                                     │ Creates Claims
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                      Crossplane (Infrastructure Engine)             │
+│  ┌──────────────┐ ┌─────────────────┐ ┌─────────────────────────────┐ │
+│  │    Claims    │ │   Composite     │ │      Managed Resources      │ │
+│  │ (What you    │ │   Resources     │ │   (Actual Infrastructure)   │ │
+│  │   want)      │ │ (Crossplane XRs)│ │   (Helm, K8s Objects)       │ │
+│  └──────────────┘ └─────────────────┘ └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
+                                     │ Provisions
+                                     ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Kubernetes Cluster (3-Node HA)                   │
+│  ┌──────────────┐ ┌─────────────────┐ ┌─────────────────────────────┐ │
+│  │   Storage    │ │    Networking   │ │      Applications           │ │
+│  │  (NFS CSI)   │ │  (MetalLB +     │ │   (n8n, Databases, etc.)    │ │
+│  │   Backup     │ │   Nginx Ingress)│ │                             │ │
+│  │  (Velero)    │ │   Observability │ │                             │ │
+│  │              │ │ (Prometheus/    │ │                             │ │
+│  │              │ │  Grafana/Loki)  │ │                             │ │
+│  └──────────────┘ └─────────────────┘ └─────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start
-
-1. **Clone and Configure**
-   ```bash
-   git clone <your-repo>
-   cd crossplane-gitops
-   ```
-
-2. **Update Configuration**
-   - Edit `CONFIGURATION.md` and update all placeholders
-   - Set your Git repository URLs in `argocd-apps/`
-   - Configure network settings, domains, and credentials
-
-3. **Run Setup**
-   ```bash
-   ./setup.sh
-   ```
-
-4. **Access ArgoCD UI**
-   ```bash
-   kubectl port-forward svc/argocd-server -n argocd 8080:443
-   # Open http://localhost:8080
-   # Username: admin
-   # Password: (check setup.sh output)
-   ```
-
-## 📁 Repository Structure
+## 🗂️ Complete File Structure & Use Cases
 
 ```
-├── README.md
-├── GITOPS_SETUP_GUIDE.md      # Detailed setup guide
-├── CONFIGURATION.md           # Configuration reference
-├── DISASTER_RECOVERY.md       # DR strategy and procedures
-├── setup.sh                   # Automated setup script
-├── bootstrap/                 # Initial cluster setup
-│   ├── namespaces.yaml
+homelab-gitops/
+├── 📝 README.md                           # This comprehensive guide
+├── ⚙️ setup.sh                            # Automated deployment script
+├── ⚙️ setup-existing-crossplane.sh        # Setup for existing Crossplane
+├── 📋 CLAUDE.md                           # Claude AI assistant context
+├── 📋 CONFIGURATION.md                    # Configuration parameters
+├── 🔄 DISASTER_RECOVERY.md                # Backup & recovery procedures
+├── 📋 GITOPS_SETUP_GUIDE.md              # Step-by-step setup guide
+├── 📋 REPOSITORY_STRATEGY.md              # Repository organization strategy
+│
+├── 🚀 bootstrap/                          # Initial cluster setup (Phase 1-3)
+│   ├── namespaces.yaml                    # Core namespaces (argocd, crossplane-system)
 │   ├── argocd/
+│   │   └── argocd-install.yaml           # ArgoCD Helm release + configuration
 │   └── crossplane/
-├── infrastructure/            # Infrastructure as Code
-│   ├── crossplane/
-│   │   ├── providers/
-│   │   ├── xrds/             # Custom Resource Definitions
-│   │   └── compositions/     # Infrastructure compositions
-│   └── platform/             # Platform service claims
-│       ├── storage/
-│       ├── backup/
+│       ├── crossplane-install.yaml       # Crossplane core installation
+│       ├── provider-installs.yaml        # Helm & Kubernetes providers  
+│       └── provider-rbac.yaml            # RBAC for Crossplane providers
+│
+├── 🏗️ infrastructure/                     # Infrastructure as Code (Phase 4-5)
+│   ├── crossplane/                       # Crossplane definitions
+│   │   ├── xrds/                        # Custom Resource Definitions (APIs)
+│   │   │   ├── ingress-xrd.yaml         # IngressStack API definition
+│   │   │   ├── observability-xrd.yaml   # ObservabilityStack API definition
+│   │   │   └── argocd-app-xrd.yaml      # ArgoApplication API definition
+│   │   ├── compositions/                 # How to create infrastructure
+│   │   │   ├── ingress-composition.yaml  # MetalLB + nginx-ingress pattern
+│   │   │   ├── observability-composition.yaml # Prometheus + Grafana + Loki
+│   │   │   └── argocd-app-composition.yaml     # ArgoCD application factory
+│   │   └── providers/
+│   │       └── provider-config/         # Provider configurations
+│   │           ├── helm-provider-config.yaml    # Helm provider setup
+│   │           └── k8s-provider-config.yaml     # Kubernetes provider setup
+│   │
+│   └── platform/                        # Platform service claims (What you want)
+│       ├── argocd/
+│       │   └── workload-applications-claim.yaml # Creates ArgoCD app via Crossplane
 │       ├── ingress/
-│       └── observability/
-├── applications/              # Application deployments
-│   ├── workloads/
-│   └── system/
-├── argocd-apps/              # ArgoCD application definitions
-│   ├── app-of-apps.yaml
-│   ├── infrastructure-apps.yaml
-│   └── application-apps.yaml
-└── secrets/                  # Secret management
-    ├── external-secrets/
-    └── sealed-secrets/
+│       │   └── ingress-stack-claim.yaml         # Requests ingress infrastructure
+│       ├── observability/
+│       │   └── observability-stack-claim.yaml   # Requests monitoring stack
+│       ├── backup/
+│       │   └── velero-release.yaml             # Backup solution via Helm
+│       └── storage/
+│           └── nfs-csi-setup.yaml              # NFS storage driver + StorageClass
+│
+├── 🔄 argocd-apps/                        # ArgoCD Applications (Phase 6)
+│   ├── app-of-apps.yaml                  # Root app that manages all other apps
+│   ├── infrastructure-apps.yaml          # Manages platform services
+│   └── application-apps.yaml             # Manages workload applications
+│
+├── 🚀 applications/                       # Application workloads
+│   └── workloads/
+│       └── n8n/
+│           └── n8n-release.yaml          # n8n workflow automation via Helm
+│
+└── 🔐 secrets/                           # Secret management
+    └── external-secrets/
+        └── external-secrets-operator.yaml # External secrets integration
 ```
 
-## 🔧 Technology Stack
+## 🔄 How ArgoCD & Crossplane Work Together
 
-### Core Platform
-- **Kubernetes**: Taloslinux bare metal HA cluster
-- **Crossplane**: Infrastructure and application management
-- **ArgoCD**: GitOps continuous deployment
-- **Helm**: Package management via Crossplane
+### **The Flow: Git → ArgoCD → Crossplane → Infrastructure**
 
-### Infrastructure Services
-- **Storage**: NFS CSI driver for persistent storage
-- **Backup**: Velero for cluster backup and restore
-- **Ingress**: NGINX Ingress Controller with MetalLB
-- **Observability**: Prometheus, Grafana, Loki stack
-- **Security**: External Secrets Operator, cert-manager
+#### **1. GitOps Layer (ArgoCD)**
+**Purpose:** Watches Git repo and syncs desired state to cluster
 
-### Sample Applications
-- **n8n**: Workflow automation platform
-- **PostgreSQL**: Database for applications
-- **Additional workloads**: Easily extensible
+- **`app-of-apps.yaml`** - The orchestrator that manages all other ArgoCD applications
+- **`infrastructure-apps.yaml`** - Syncs platform infrastructure from `infrastructure/platform/`
+- **`application-apps.yaml`** - Syncs workloads from `applications/`
 
-## 📋 Setup Phases
+**ArgoCD monitors Git changes and ensures cluster matches repository state**
 
-### Phase 1: Bootstrap
-- Create required namespaces
-- Basic cluster preparation
+#### **2. Infrastructure Abstraction Layer (Crossplane)**
+**Purpose:** Takes high-level claims and provisions actual infrastructure
 
-### Phase 2: Crossplane Installation
-- Install Crossplane core
-- Deploy required providers (Helm, Kubernetes)
-- Configure provider permissions
+- **Claims** (in `infrastructure/platform/`) - "I want an ingress stack"
+- **XRDs** (in `infrastructure/crossplane/xrds/`) - Define the APIs for claims
+- **Compositions** (in `infrastructure/crossplane/compositions/`) - Define HOW to fulfill claims
+- **Managed Resources** - Actual Kubernetes objects, Helm releases, etc.
 
-### Phase 3: ArgoCD Installation
-- Install ArgoCD with Helm
-- Configure basic settings
-- Secure admin access
+### **Example: Requesting Monitoring Stack**
 
-### Phase 4: Infrastructure Deployment
-- Apply Crossplane XRDs and Compositions
-- Deploy infrastructure abstractions
-- Configure provider configurations
+```
+1. 📝 You edit: infrastructure/platform/observability/observability-stack-claim.yaml
+2. 🔄 Git commit/push: Change goes to repository  
+3. 👁️ ArgoCD detects: Sees Git diff, syncs ObservabilityStack claim to cluster
+4. ⚡ Crossplane processes: Uses observability-composition.yaml
+5. 🏗️ Crossplane creates:
+   - Namespace: monitoring
+   - Helm Release: kube-prometheus-stack  
+   - Helm Release: loki-stack
+   - ConfigMaps, Secrets, etc.
+6. ✅ Result: Full monitoring stack running
+```
 
-### Phase 5: Platform Services
-- Deploy storage solutions (NFS CSI)
-- Setup backup system (Velero)
-- Configure ingress stack (NGINX + MetalLB)
-- Deploy observability stack (Prometheus + Grafana + Loki)
+## 🚀 Quick Start Guide
 
-### Phase 6: GitOps Automation
-- Configure App of Apps pattern
-- Setup automated sync policies
-- Deploy application workloads
+### **Prerequisites**
+- 3-node Kubernetes cluster (Talos HA with schedulable masters)
+- MetalLB IP range: `10.20.0.81-10.20.0.90` 
+- NFS server: `10.20.0.10` with `/volume1/kubernetes` share
+- `kubectl` configured for cluster access
 
-## 🔒 Security and Secrets Management
+### **1. Clone & Configure**
+```bash
+git clone https://github.com/jamilshaikh07/homelab-gitops.git
+cd homelab-gitops
 
-### External Secrets Operator (Recommended)
-- Integrates with external secret stores
-- Supports AWS Secrets Manager, Azure Key Vault, HashiCorp Vault
-- Automatic secret rotation and updates
+# Update repository URLs in argocd-apps/ files
+sed -i 's/jamilshaikh07/YOUR_USERNAME/g' argocd-apps/*.yaml
+```
 
-### Sealed Secrets (Alternative)
-- Client-side encryption for Git storage
-- Controller-based decryption in cluster
-- Suitable for smaller deployments
+### **2. Deploy Bootstrap (ArgoCD + Crossplane)**
+```bash
+# Create namespaces and install core components
+kubectl apply -f bootstrap/namespaces.yaml
+kubectl apply -f bootstrap/crossplane/
+kubectl apply -f bootstrap/argocd/
 
-### Best Practices
-- Never commit plain text secrets to Git
-- Use separate repositories for sensitive configurations
-- Implement proper RBAC for secret access
-- Regular secret rotation
+# Wait for ArgoCD to be ready
+kubectl wait --for=condition=Ready pods -l app.kubernetes.io/name=argocd-server -n argocd --timeout=300s
+```
 
-## 📊 Monitoring and Observability
+### **3. Get ArgoCD Admin Password**
+```bash
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d && echo
+```
 
-### Prometheus Stack
-- Metrics collection from all platform components
-- Custom dashboards for Crossplane and ArgoCD
-- Alerting for platform health and performance
+### **4. Configure Git Repository Access**
+```bash
+# Create repository secret for private repos
+kubectl create secret generic github-repo-secret \
+  --from-literal=type=git \
+  --from-literal=url=https://github.com/jamilshaikh07/homelab-gitops.git \
+  --from-literal=username=jamilshaikh07 \
+  --from-literal=password=YOUR_GITHUB_PAT \
+  -n argocd
 
-### Grafana Dashboards
-- Infrastructure overview
-- Application performance monitoring
-- GitOps deployment metrics
-- Backup and restore status
+kubectl label secret github-repo-secret argocd.argoproj.io/secret-type=repository -n argocd
+```
 
-### Loki for Logs
-- Centralized log aggregation
+### **5. Deploy GitOps Applications**
+```bash
+# Deploy the app-of-apps (this manages everything else)
+kubectl apply -f argocd-apps/app-of-apps.yaml
+
+# Access ArgoCD UI
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+# Open https://localhost:8080 (admin / password from step 3)
+```
+
+## 🔧 Technology Stack Details
+
+### **Core Platform**
+| Component | Purpose | Configuration |
+|-----------|---------|---------------|
+| **Talos Linux** | Immutable OS for K8s | 3-node HA cluster, schedulable masters |
+| **Crossplane** | Infrastructure orchestration | Helm + Kubernetes providers |
+| **ArgoCD** | GitOps continuous deployment | App-of-apps pattern, auto-sync enabled |
+
+### **Infrastructure Services**
+| Service | Implementation | Configuration File |
+|---------|----------------|-------------------|
+| **Load Balancer** | MetalLB | `ingress-composition.yaml` |
+| **Ingress** | nginx-ingress | `ingress-stack-claim.yaml` |
+| **Storage** | NFS CSI Driver | `nfs-csi-setup.yaml` |
+| **Monitoring** | Prometheus + Grafana + Loki | `observability-composition.yaml` |
+| **Backup** | Velero | `velero-release.yaml` |
+| **Secrets** | External Secrets Operator | `external-secrets-operator.yaml` |
+
+### **Network Configuration**
+- **MetalLB Pool:** `10.20.0.81-10.20.0.90`
+- **NFS Server:** `10.20.0.10:/volume1/kubernetes`
+- **Ingress Controller:** nginx with LoadBalancer type
+- **TLS:** cert-manager for automatic certificate management
+
+## 📊 Monitoring & Observability
+
+### **Prometheus Stack Features**
+- **Metrics Collection:** All platform components monitored
+- **Custom Dashboards:** Crossplane, ArgoCD, application metrics
+- **Alerting:** Platform health, resource utilization, GitOps failures
+- **Storage:** Persistent volumes with NFS backend
+
+### **Grafana Dashboards**
+- Infrastructure overview and resource utilization
+- ArgoCD application sync status and history
+- Crossplane resource provisioning metrics
+- Application performance and health monitoring
+
+### **Loki Log Aggregation**
+- Centralized logging for all platform components
 - Integration with Grafana for unified observability
-- Log-based alerting and troubleshooting
+- Log-based alerting and troubleshooting capabilities
 
-## 🔄 Backup and Disaster Recovery
+## 🔐 Security & Best Practices
 
-### Multi-Layer Backup Strategy
-1. **Git Repository**: Source of truth protection
-2. **Cluster State**: Velero for resources and data
-3. **Persistent Storage**: NAS-level backups
-4. **Application Data**: Database dumps and exports
+### **Secret Management**
+- **External Secrets Operator** for secret store integration
+- **Never commit plaintext secrets** to Git repository
+- **GitOps-friendly** encrypted secrets workflow
+- **Automatic secret rotation** capabilities
 
-### Recovery Scenarios
-- Complete cluster loss recovery
-- Partial application failure recovery
-- Configuration drift remediation
-- Data corruption recovery
+### **RBAC & Access Control**
+- **Crossplane provider permissions** properly configured
+- **ArgoCD RBAC** for team-based access control
+- **Namespace isolation** for workloads
+- **Service account** principle of least privilege
 
-### Testing and Validation
-- Monthly DR simulations
-- Automated backup verification
-- Recovery time objectives (RTO) monitoring
+### **Network Security**
+- **Private Git repository** access via tokens
+- **TLS everywhere** with automatic certificate management
+- **Network policies** for pod-to-pod communication
+- **Ingress protection** with proper SSL/TLS termination
 
-## 🛠️ Operations and Maintenance
+## 🔄 Backup & Disaster Recovery
 
-### Day 1 Operations
-- Initial setup and configuration
-- Security hardening
-- Integration testing
+### **Multi-Layer Backup Strategy**
+1. **Git Repository:** Primary source of truth protection
+2. **Velero:** Kubernetes resources and persistent volume backups
+3. **NAS-Level:** Storage system snapshots and replication
+4. **Application Data:** Database dumps and application-specific backups
 
-### Day 2 Operations
-- Application lifecycle management
-- Scaling and capacity planning
-- Security updates and patches
-- Backup verification and testing
+### **Recovery Procedures**
+- **Complete cluster recovery** from Velero backups
+- **GitOps state restoration** from Git repository
+- **Application data recovery** from persistent volume snapshots
+- **Configuration drift remediation** via ArgoCD sync
 
-### Troubleshooting
-- ArgoCD sync issues
-- Crossplane resource debugging
-- Application deployment problems
-- Performance optimization
+## 🛠️ Operational Workflows
 
-## 📚 Documentation
+### **Adding New Infrastructure**
+1. **Create/update claim** in `infrastructure/platform/`
+2. **Modify composition** if new patterns needed
+3. **Git commit/push** - ArgoCD automatically deploys
+4. **Monitor ArgoCD UI** for sync status
 
-- **[Setup Guide](GITOPS_SETUP_GUIDE.md)**: Comprehensive step-by-step setup
-- **[Configuration Reference](CONFIGURATION.md)**: All customizable parameters
-- **[Disaster Recovery](DISASTER_RECOVERY.md)**: Complete DR strategy and procedures
+### **Deploying New Applications**
+1. **Add Helm release** to `applications/workloads/`
+2. **Update application-apps** if needed
+3. **Git commit/push** - automatic deployment
+4. **Verify in ArgoCD** and application dashboards
 
-## 🤝 Contributing
+### **Troubleshooting Common Issues**
+- **ArgoCD sync failures:** Check repository access and resource validation
+- **Crossplane resource stuck:** Verify provider permissions and resource dependencies
+- **Application deployment issues:** Check Helm values and resource quotas
 
-1. Fork the repository
-2. Create a feature branch
-3. Make changes and test thoroughly
-4. Submit a pull request
-5. Update documentation as needed
+## 📚 Additional Documentation
 
-## 📄 License
+- **[Setup Guide](GITOPS_SETUP_GUIDE.md):** Comprehensive step-by-step installation
+- **[Configuration Reference](CONFIGURATION.md):** All customizable parameters and options
+- **[Disaster Recovery](DISASTER_RECOVERY.md):** Complete backup and recovery procedures
+- **[Repository Strategy](REPOSITORY_STRATEGY.md):** Git workflow and organization patterns
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 🤝 Contributing & Customization
 
-## 🆘 Support
+### **Extending the Platform**
+1. **Add new XRDs** for custom infrastructure patterns
+2. **Create compositions** for complex multi-component stacks  
+3. **Integrate new providers** for cloud or external services
+4. **Add monitoring dashboards** for custom applications
 
-- Check the troubleshooting section in the setup guide
-- Review ArgoCD and Crossplane documentation
-- Open issues for bugs or feature requests
-- Join the community discussions
+### **Best Practices for Changes**
+- Test changes in separate branch/cluster first
+- Update documentation with any configuration changes
+- Follow GitOps principles - everything through Git
+- Use proper commit messages for tracking changes
+
+## ⚡ What Makes This Special
+
+### **True GitOps Experience**
+- **Everything in Git:** Infrastructure, applications, and configurations
+- **Automatic synchronization:** Push to Git, see changes in cluster
+- **Rollback capability:** Git revert = infrastructure rollback
+- **Change tracking:** Full audit trail of all modifications
+
+### **Production-Ready Platform**
+- **High availability:** 3-node cluster with proper redundancy
+- **Monitoring & alerting:** Complete observability stack included
+- **Backup & recovery:** Multi-layer protection strategy
+- **Security:** Proper RBAC, secret management, and network policies
+
+### **Developer-Friendly**
+- **Self-service infrastructure:** Developers can request resources via Git
+- **Consistent environments:** Same GitOps process for all environments
+- **Easy troubleshooting:** Centralized logging and monitoring
+- **Rapid deployment:** Minutes from Git commit to running application
 
 ---
 
-**Note**: This is a production-ready GitOps platform setup. Please review all configurations, especially security settings and network parameters, before deploying to production environments.
+🏠 **Ready for your homelab?** This platform provides enterprise-grade GitOps workflows in a homelab-friendly package. From infrastructure provisioning to application deployment, everything is automated, monitored, and recoverable.
 
+**Next Steps:** Follow the [Setup Guide](GITOPS_SETUP_GUIDE.md) for detailed deployment instructions!
