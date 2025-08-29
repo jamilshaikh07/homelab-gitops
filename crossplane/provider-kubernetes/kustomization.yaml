@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - provider.yaml
   - providerconfig.yaml
+  - rbac.yaml
