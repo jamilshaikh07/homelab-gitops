@@ -5,7 +5,10 @@ metadata:
   namespace: crossplane-system
   annotations:
     argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
+  deletionPolicy: Delete  # Ensure Helm release gets deleted
   providerConfigRef:
     name: in-cluster-helm
   forProvider:
