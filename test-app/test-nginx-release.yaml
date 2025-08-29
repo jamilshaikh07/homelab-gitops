@@ -1,0 +1,19 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: test-app
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  providerConfigRef:
+    name: in-cluster-helm
+  forProvider:
+    chart:
+      name: nginx
+      repository: https://charts.bitnami.com/bitnami
+      version: "15.14.2"
+    namespace: test-app
+    values:
+      service:
+        type: ClusterIP  # Simple test, no LoadBalancer needed
