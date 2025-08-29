@@ -1,0 +1,31 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: nginx-ingress
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  providerConfigRef:
+    name: in-cluster-helm
+  forProvider:
+    chart:
+      name: nginx-ingress
+      repository: oci://ghcr.io/nginx/charts
+      version: "2.2.2"
+    namespace: nginx-ingress
+    values:
+      controller:
+        service:
+          type: LoadBalancer
+          loadBalancerIP: ""  # Let MetalLB assign from pool
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: false  # Enable when Prometheus is deployed
+        ingressClassResource:
+          name: nginx
+          enabled: true
+          default: true
+      rbac:
+        create: true

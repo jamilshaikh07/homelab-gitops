@@ -1,0 +1,37 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: nova
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  providerConfigRef:
+    name: in-cluster-helm
+  forProvider:
+    chart:
+      name: nova
+      repository: https://fairwindsops.github.io/charts
+      version: "3.4.3"
+    namespace: nova
+    values:
+      # Nova configuration for monitoring Helm releases
+      config:
+        # Check for outdated Helm releases
+        helm:
+          enabled: true
+        # Web interface
+        web:
+          enabled: true
+          service:
+            type: LoadBalancer  # Get LoadBalancer IP from MetalLB
+        # Slack notifications (optional)
+        slack:
+          enabled: false
+        # Cluster role permissions
+      rbac:
+        create: true
+        clusterRole: true
+      # Service account
+      serviceAccount:
+        create: true
