@@ -3,6 +3,8 @@ kind: Object
 metadata:
   name: metallb-ipaddresspool
   namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   providerConfigRef:
     name: in-cluster
