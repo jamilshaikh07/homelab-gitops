@@ -1,0 +1,22 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: demo-app
+  namespace: crossplane-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io  # ← This makes Argo CD wait
+spec:
+  deletionPolicy: Delete  # ← This ensures Crossplane deletes Helm release
+  providerConfigRef:
+    name: in-cluster-helm
+  forProvider:
+    chart:
+      name: nginx
+      repository: https://charts.bitnami.com/bitnami
+      version: "15.14.2"
+    namespace: demo-app
+    values:
+      service:
+        type: ClusterIP

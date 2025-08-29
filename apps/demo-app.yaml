@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io  # ← This ensures cleanup
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/jamilshaikh07/homelab-gitops.git
+    targetRevision: main
+    path: demo-app
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: crossplane-system
+  syncPolicy:
+    automated:
+      prune: true      # ← This enables automatic deletion
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
