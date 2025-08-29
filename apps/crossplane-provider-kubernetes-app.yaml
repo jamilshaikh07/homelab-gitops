@@ -1,24 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: app-of-apps
+  name: crossplane-provider-kubernetes
   namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
 spec:
   project: default
   source:
     repoURL: https://github.com/jamilshaikh07/homelab-gitops.git
-    targetRevision: HEAD
-    path: argocd-apps
+    targetRevision: main
+    path: crossplane/provider-kubernetes
   destination:
     server: https://kubernetes.default.svc
-    namespace: argocd
+    namespace: crossplane-system
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
-      - PruneLast=true
