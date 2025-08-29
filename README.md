@@ -148,20 +148,6 @@ kubectl get releases  # For provider-helm managed resources
 - **GitHub Access**: Private repository access configured (PAT recommended)
 - **Kubernetes Cluster**: With sufficient RBAC permissions for Crossplane
 
-## 📖 Blog Posts & Documentation
-
-For detailed explanations and step-by-step guides, check out our blog posts:
-
-- **Medium**: [`blog/medium-post.md`](blog/medium-post.md) - "Building a Production-Ready GitOps Infrastructure with Argo CD and Crossplane"
-- **Dev.to**: [`blog/devto-post.md`](blog/devto-post.md) - "GitOps Magic: How to Deploy Infrastructure with Argo CD + Crossplane"
-
-These posts cover:
-- Complete setup walkthrough
-- GitOps best practices  
-- Deletion workflow strategies
-- Troubleshooting common issues
-- Real-world implementation examples
-
 ## 🔧 Configuration Files Reference
 
 ### Directory Structure
