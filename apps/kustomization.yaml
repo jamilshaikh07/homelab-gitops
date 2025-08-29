@@ -5,3 +5,4 @@ resources:
   - crossplane-provider-helm-app.yaml
   - metallb-config-app.yaml
   - nginx-ingress-app.yaml
+  - demo-webapp-app.yaml

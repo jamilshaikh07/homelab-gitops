@@ -1,0 +1,25 @@
+apiVersion: helm.crossplane.io/v1beta1
+kind: Release
+metadata:
+  name: demo-webapp
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    chart:
+      name: nginx
+      repository: https://charts.bitnami.com/bitnami
+      version: 15.14.2
+    namespace: demo-webapp
+    values:
+      service:
+        type: LoadBalancer
+        # Let MetalLB assign IP automatically from pool instead of hardcoding
+      replicaCount: 1
+      image:
+        registry: docker.io
+        repository: bitnami/nginx
+        tag: 1.25.2
+  providerConfigRef:
+    name: in-cluster-helm
