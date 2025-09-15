@@ -1,0 +1,55 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus-stack
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    - repoURL: https://github.com/jamilshaikh07/homelab-gitops
+      path: manifests/monitoring-namespace
+      targetRevision: main
+    - chart: kube-prometheus-stack
+      repoURL: https://prometheus-community.github.io/helm-charts
+      targetRevision: 77.6.2
+      helm:
+        skipCrds: false
+        values: |
+          crds:
+            enabled: true
+          prometheusOperator:
+            admissionWebhooks:
+              enabled: true
+              patch:
+                enabled: true
+                image:
+                  repository: registry.k8s.io/ingress-nginx/kube-webhook-certgen
+                  tag: v1.6.2
+          grafana:
+            adminPassword: admin
+            ingress:
+              enabled: false
+          prometheus:
+            prometheusSpec:
+              retention: 30d
+              storageSpec:
+                volumeClaimTemplate:
+                  spec:
+                    storageClassName: local-path
+                    accessModes: ["ReadWriteOnce"]
+                    resources:
+                      requests:
+                        storage: 10Gi
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - Replace=true
+      - SkipDryRunOnMissingResource=true
