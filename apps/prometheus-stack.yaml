@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: prometheus-stack
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -37,7 +39,7 @@ spec:
               storageSpec:
                 volumeClaimTemplate:
                   spec:
-                    storageClassName: local-path
+                    storageClassName: nfs-client
                     accessModes: ["ReadWriteOnce"]
                     resources:
                       requests:
