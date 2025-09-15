@@ -15,9 +15,18 @@ spec:
     repoURL: https://prometheus-community.github.io/helm-charts
     targetRevision: 77.6.2
     helm:
+      skipCrds: false
       values: |
         crds:
           enabled: true
+        prometheusOperator:
+          admissionWebhooks:
+            enabled: true
+            patch:
+              enabled: true
+              image:
+                repository: registry.k8s.io/ingress-nginx/kube-webhook-certgen
+                tag: v1.6.2
         grafana:
           adminPassword: admin
           ingress:
@@ -41,3 +50,4 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
       - Replace=true
+      - SkipDryRunOnMissingResource=true
