@@ -46,10 +46,9 @@ spec:
                       requests:
                         storage: 10Gi
   syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
+    automated: {}
     syncOptions:
       - ServerSideApply=true
       - Replace=true
-      - SkipDryRunOnMissingResource=true
+      - Validate=false
+      - RespectIgnoreDifferences=true
