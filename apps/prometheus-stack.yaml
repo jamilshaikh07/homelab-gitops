@@ -16,6 +16,8 @@ spec:
     targetRevision: 77.6.2
     helm:
       values: |
+        crds:
+          enabled: true
         grafana:
           adminPassword: admin
           ingress:
@@ -38,3 +40,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - Replace=true
