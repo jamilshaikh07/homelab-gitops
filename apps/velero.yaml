@@ -10,46 +10,48 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: velero
-  source:
-    repoURL: https://vmware-tanzu.github.io/helm-charts
-    chart: velero
-    targetRevision: 10.1.2
-    helm:
-      values: |
-        credentials:
-          secretContents:
-            cloud: |
-              [default]
-              aws_access_key_id=admin
-              aws_secret_access_key=Jamil@123
+  sources:
+    - repoURL: https://github.com/jamilshaikh07/homelab-gitops
+      path: manifests/velero-namespace
+      targetRevision: main
+    - repoURL: https://vmware-tanzu.github.io/helm-charts
+      chart: velero
+      targetRevision: 10.1.2
+      helm:
+        values: |
+          credentials:
+            secretContents:
+              cloud: |
+                [default]
+                aws_access_key_id=admin
+                aws_secret_access_key=Jamil@123
 
-        configuration:
-          backupStorageLocation:
-            - name: minio
-              provider: aws
-              bucket: velero
-              config:
-                region: minio
-                s3ForcePathStyle: true
-                s3Url: http://10.20.0.163:9000
-          volumeSnapshotLocation:
-            - name: minio
-              provider: aws
-              config:
-                region: minio
+          configuration:
+            backupStorageLocation:
+              - name: minio
+                provider: aws
+                bucket: velero
+                config:
+                  region: minio
+                  s3ForcePathStyle: true
+                  s3Url: http://10.20.0.163:9000
+            volumeSnapshotLocation:
+              - name: minio
+                provider: aws
+                config:
+                  region: minio
 
-        initContainers:
-          - name: velero-plugin-for-aws
-            image: velero/velero-plugin-for-aws:v1.10.1
-            volumeMounts:
-              - mountPath: /target
-                name: plugins
+          initContainers:
+            - name: velero-plugin-for-aws
+              image: velero/velero-plugin-for-aws:v1.10.1
+              volumeMounts:
+                - mountPath: /target
+                  name: plugins
 
-        deployNodeAgent: true
+          deployNodeAgent: true
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
