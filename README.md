@@ -19,12 +19,25 @@ homelab-gitops/
 ├── apps/                     # Individual ArgoCD Application manifests
 │   ├── cert-manager.yaml    
 │   ├── prometheus-stack.yaml
-│   └── homelab-services.yaml
+│   ├── homelab-services.yaml
+│   ├── nfs-provisioner.yaml
+│   ├── metallb.yaml
+│   ├── velero.yaml
+│   └── ingress-nginx.yaml
 ├── apps-disabled/            # Disabled applications (not deployed)
-│   ├── nginx-ingress.yaml   # NGINX Ingress (disabled)
+│   ├── nginx-ingress.yaml   # Legacy NGINX Ingress (disabled)
 │   └── README.md
 ├── manifests/                # Kubernetes manifests for custom applications
-│   └── homelab-services/     # Custom application manifests
+│   ├── homelab-services/     # Custom application manifests
+│   │   ├── whoami.yaml
+│   │   ├── monitoring-ingress.yaml
+│   │   └── argocd-ingress.yaml
+│   ├── monitoring-namespace/ # Monitoring namespace with pod security
+│   ├── metallb-namespace/    # MetalLB namespace with pod security
+│   ├── metallb-ip-pool/      # MetalLB IP pool configuration
+│   └── velero-namespace/     # Velero namespace with pod security
+├── docs/                     # Documentation
+│   └── ARGOCD-SETUP.md      # ArgoCD external proxy configuration
 └── README.md
 ```
 
@@ -66,14 +79,50 @@ homelab-gitops/
 
 - **cert-manager**: Automatic TLS certificate management
 - **prometheus-stack**: Complete monitoring stack (Prometheus, Grafana, AlertManager)
-
-### Disabled Applications
-
-- **nginx-ingress**: Ingress controller for external access (currently disabled)
+- **nfs-provisioner**: NFS storage provisioner for persistent volumes
+- **metallb**: Load balancer for bare metal Kubernetes clusters
+- **velero**: Backup and disaster recovery solution with MinIO backend
+- **ingress-nginx**: NGINX Ingress Controller for HTTP/HTTPS routing
 
 ### Custom Applications
 
-- **homelab-services**: Custom applications specific to your homelab
+- **homelab-services**: Custom applications and services specific to your homelab
+
+### External Access
+
+This setup includes NGINX Proxy Manager at `10.20.0.127` for external SSL termination:
+
+- **ArgoCD**: https://argocd.devopsowl.com
+- **Grafana**: https://grafana.devopsowl.com  
+- **Prometheus**: https://prometheus.devopsowl.com
+
+All services use wildcard SSL certificates (`*.devopsowl.com`) managed by Let's Encrypt with DNS01 challenge.
+
+## Infrastructure Components
+
+### Storage
+- **NFS Provisioner**: Provides persistent storage using NFS
+- **Default Storage Class**: `nfs-client` for dynamic volume provisioning
+
+### Networking
+- **MetalLB**: Load balancer with IP pool `10.20.0.81-10.20.0.99`
+- **NGINX Ingress**: HTTP/HTTPS routing to services
+- **External Proxy**: NGINX Proxy Manager for SSL termination
+
+### Monitoring
+- **Prometheus**: Metrics collection and alerting
+- **Grafana**: Visualization and dashboards
+- **AlertManager**: Alert routing and management
+- **Node Exporter**: Host metrics collection
+
+### Backup & Recovery
+- **Velero**: Cluster backup with MinIO S3 backend (`10.20.0.163:9000`)
+- **Node Agent**: File-level backup for persistent volumes
+- **Scheduled Backups**: Daily backup at 2 AM
+
+## Documentation
+
+- [ArgoCD External Proxy Setup](docs/ARGOCD-SETUP.md) - Detailed configuration for external proxy
 
 ## Adding New Applications
 
