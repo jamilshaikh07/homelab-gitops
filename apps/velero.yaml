@@ -1,0 +1,77 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: velero
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: velero
+    server: https://kubernetes.default.svc
+  project: default
+  sources:
+    - repoURL: https://github.com/jamilshaikh07/homelab-gitops
+      path: manifests/velero-namespace
+      targetRevision: main
+    - chart: velero
+      repoURL: https://vmware-tanzu.github.io/helm-charts
+      targetRevision: 10.1.2
+      helm:
+        values: |
+          configuration:
+            provider: aws
+            backupStorageLocation:
+              name: default
+              provider: aws
+              bucket: velero-backups
+              config:
+                region: us-east-1
+                s3ForcePathStyle: true
+                s3Url: http://10.20.0.163:9002
+            volumeSnapshotLocation:
+              name: default
+              provider: aws
+              config:
+                region: us-east-1
+          credentials:
+            existingSecret: cloud-credentials
+          deployRestic: true
+          restic:
+            podVolumePath: /var/lib/kubelet/pods
+            privileged: false
+            tolerations:
+              - key: node-role.kubernetes.io/control-plane
+                operator: Equal
+                effect: NoSchedule
+          initContainers:
+            - name: velero-plugin-for-aws
+              image: velero/velero-plugin-for-aws:v1.10.0
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - mountPath: /target
+                  name: plugins
+          schedules:
+            daily-backup:
+              disabled: false
+              schedule: "0 2 * * *"
+              template:
+                ttl: "720h"
+                includedNamespaces:
+                  - "*"
+                excludedNamespaces:
+                  - kube-system
+                  - kube-public
+                  - kube-node-lease
+                storageLocation: default
+                volumeSnapshotLocations:
+                  - default
+                defaultVolumesToRestic: true
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
