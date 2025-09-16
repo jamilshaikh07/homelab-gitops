@@ -24,18 +24,18 @@ spec:
           configuration:
             provider: aws
             backupStorageLocation:
-              name: default
-              provider: aws
-              bucket: velero-backups
-              config:
-                region: us-east-1
-                s3ForcePathStyle: true
-                s3Url: http://10.20.0.163:9002
+              - name: default
+                provider: aws
+                bucket: velero-backups
+                config:
+                  region: us-east-1
+                  s3ForcePathStyle: true
+                  s3Url: http://10.20.0.163:9002
             volumeSnapshotLocation:
-              name: default
-              provider: aws
-              config:
-                region: us-east-1
+              - name: default
+                provider: aws
+                config:
+                  region: us-east-1
           credentials:
             existingSecret: cloud-credentials
           deployRestic: true
