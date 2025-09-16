@@ -22,7 +22,6 @@ spec:
       helm:
         values: |
           configuration:
-            provider: aws
             backupStorageLocation:
               - name: default
                 provider: aws
@@ -38,8 +37,8 @@ spec:
                   region: us-east-1
           credentials:
             existingSecret: cloud-credentials
-          deployRestic: true
-          restic:
+          deployNodeAgent: true
+          nodeAgent:
             podVolumePath: /var/lib/kubelet/pods
             privileged: false
             tolerations:
@@ -68,7 +67,7 @@ spec:
                 storageLocation: default
                 volumeSnapshotLocations:
                   - default
-                defaultVolumesToRestic: true
+                defaultVolumesToNodeAgent: true
   syncPolicy:
     automated:
       prune: true
