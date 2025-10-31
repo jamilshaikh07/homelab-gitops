@@ -19,7 +19,7 @@ spec:
     helm:
       values: |
         nfs:
-          server: 10.20.0.163
+          server: 10.20.0.41
           path: /mnt/pool1/k8s
         storageClass:
           name: nfs-client
