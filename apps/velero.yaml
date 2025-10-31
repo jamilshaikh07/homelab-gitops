@@ -23,7 +23,7 @@ spec:
             secretContents:
               cloud: |
                 [default]
-                aws_access_key_id=admin
+                aws_access_key_id=james
                 aws_secret_access_key=Jamil@123
 
           configuration:
@@ -34,7 +34,7 @@ spec:
                 config:
                   region: minio
                   s3ForcePathStyle: true
-                  s3Url: http://10.20.0.163:9000
+                  s3Url: http://10.20.0.41:9000
             volumeSnapshotLocation:
               - name: minio
                 provider: aws
