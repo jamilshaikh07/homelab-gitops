@@ -20,7 +20,7 @@ spec:
       values: |
         nfs:
           server: 10.20.0.41
-          path: /mnt/pool1/k8s
+          path: /mnt/nas41/srv/kubernetes
         storageClass:
           name: nfs-client
           defaultClass: true
