@@ -48,6 +48,18 @@ homelab-gitops/
 1. A Kubernetes cluster (k3s, k8s, etc.)
 2. ArgoCD installed in the cluster
 3. This repository accessible from your cluster
+4. On each Kubernetes node (workers), install the NFS client package so the cluster can mount NFS exports. On Ubuntu/Debian nodes:
+
+```bash
+sudo apt update
+sudo apt install -y nfs-common
+```
+
+On RHEL/Fedora/CentOS nodes:
+
+```bash
+sudo dnf install -y nfs-utils   # or `yum install -y nfs-utils`
+```
 
 ### Installation
 
