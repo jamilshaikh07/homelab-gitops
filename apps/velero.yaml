@@ -36,11 +36,9 @@ spec:
                   s3ForcePathStyle: true
                   s3Url: http://10.20.0.41:9000
                 default: true
-            volumeSnapshotLocation:
-              - name: minio
-                provider: aws
-                config:
-                  region: minio
+            defaultVolumesToFsBackup: true
+          snapshotsEnabled: false
+          deployNodeAgent: true
 
           initContainers:
             - name: velero-plugin-for-aws
@@ -49,7 +47,6 @@ spec:
                 - mountPath: /target
                   name: plugins
 
-          deployNodeAgent: true
   syncPolicy:
     automated:
       prune: true
