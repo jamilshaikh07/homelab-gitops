@@ -30,13 +30,12 @@ spec:
             backupStorageLocation:
               - name: minio
                 provider: aws
-                objectStorage:
-                  bucket: velero
+                bucket: velero
                 config:
                   region: minio
                   s3ForcePathStyle: true
                   s3Url: http://10.20.0.41:9000
-                  profile: default
+                default: true
             volumeSnapshotLocation:
               - name: minio
                 provider: aws
