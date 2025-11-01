@@ -16,7 +16,7 @@ spec:
       targetRevision: main
     - repoURL: https://vmware-tanzu.github.io/helm-charts
       chart: velero
-      targetRevision: 10.1.2
+      targetRevision: 11.1.1
       helm:
         values: |
           credentials:
@@ -43,7 +43,7 @@ spec:
 
           initContainers:
             - name: velero-plugin-for-aws
-              image: velero/velero-plugin-for-aws:v1.10.1
+              image: velero/velero-plugin-for-aws:v1.13.0
               volumeMounts:
                 - mountPath: /target
                   name: plugins
